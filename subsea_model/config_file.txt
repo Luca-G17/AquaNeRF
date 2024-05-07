@@ -1,0 +1,7 @@
+learning_rate, 0.01
+optimiser, RAdam
+downscaling, 1
+base_value, 0.1
+rgb_loss_type, Normal
+grad_scaled_loss, False
+use_depth_renderer, True
