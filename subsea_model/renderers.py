@@ -40,20 +40,13 @@ class UnderWaterRGBRenderer(nn.Module):
             Rendered pixel colour.
         """
         std  = 0.10
-        assume_medium_threshold = 0.2
         s = ray_samples.frustums.starts
 
         comp_object_rgb = 0
         depth_weighting = weights
         if (self.use_depth_renderer and step > self.start_depth_render) or (self.use_depth_renderer and not(self.training)):
             depth_weighting = torch.clip(self.base_value + torch.exp(-torch.square(s - depth.unsqueeze(1)) / (2 * (std ** 2))), 0, 1)
-
-            # Only apply depth renderer if the accumulated absorption passes some threshold - i.e. the ray hits an object in the foreground
             accumulated_weight = torch.sum(weights, dim=-2)
-            #assume_medium = depth > 100
-            #depth_weighting[assume_medium.squeeze()] = 1
-
-            #print(depth)
             comp_object_rgb = torch.sum(weights * depth_weighting * rgb, dim=-2)
         else:
             comp_object_rgb = torch.sum(weights * rgb, dim=-2)

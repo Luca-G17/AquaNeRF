@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 import os
 import argparse
-
-RENDERS='renders/'
+import matplotlib.pyplot as plt
+from utils.utils import average_metrics
 
 def unmask_sharpen(image, scalar=1.5, threshold=0):
     blurred = cv2.GaussianBlur(image, (3, 3), 1)
@@ -29,12 +29,37 @@ def sharpen_folder(folder, scalar=1.5):
         sharpend = unmask_sharpen(image, scalar)
         cv2.imwrite(f'{sharpend_folder}/{image_name}', sharpend)
         print(f'sharpend images: {i + 1:03}/{len(files)}\r', end="")
+    return sharpend_folder
+
+def sharpen_analyse(frame_path, scalar):
+    image = cv2.imread(frame_path)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    sharpend = unmask_sharpen(gray, scalar)
+    error = np.square(sharpend - gray)
+    plt.imshow(error, cmap = 'gray', interpolation = 'bicubic')
+    plt.xticks([]), plt.yticks([])
+    plt.show()
+
+def sharpen_quantitative(frame_dir):   
+    scalars = [1.0, 1.5, 2.0]
+    for scalar in scalars:
+        sharpend = sharpen_folder(frame_dir, scalar)
+        data = average_metrics(f'{frame_dir}../gt-rgb', sharpend)
+        print(data)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--frame_dir', type=str, default='')
 parser.add_argument('--scalar', type=int, default=15)
+parser.add_argument('-a', action='store_true')
+parser.add_argument('-e', action='store_true')
 args = parser.parse_args()
+
 if args.frame_dir == '':
     print("Command line argument 'frame_dir' missing")
 else:
-    sharpen_folder(RENDERS + args.frame_dir, args.scalar / float(10))
+    if args.e:
+        sharpen_quantitative(frame_dir=args.frame_dir)
+    elif not args.a:
+        sharpen_folder(args.frame_dir, args.scalar / float(10))
+    else:
+        sharpen_analyse(args.frame_dir, args.scalar / float(10))
